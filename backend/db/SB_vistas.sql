@@ -2,6 +2,11 @@
 -- CÁLCULO DE POBREZA
 -- ============================================
 
+ALTER TABLE vivienda ADD COLUMN ambito TEXT CHECK (ambito IN ('rural', 'urbano'));
+UPDATE vivienda SET ambito = 'urbano' WHERE idVivienda IN (1, 2, 4);
+UPDATE vivienda SET ambito = 'rural' WHERE idVivienda IN (3, 5);
+
+
 -- ============================================
 -- 1. FUNCIÓN PARA CALCULAR AÑOS DE EDUCACIÓN
 -- ============================================
@@ -10,17 +15,12 @@ RETURNS INTEGER AS $$
 BEGIN
     RETURN CASE
         WHEN ultimo_grado ILIKE '%preescolar%' OR ultimo_grado ILIKE '%kinder%' THEN 0
-        WHEN ultimo_grado ILIKE '%primaria%' THEN 
-            -- Extraer número si existe
-            CAST(COALESCE(NULLIF(regexp_replace(ultimo_grado, '[^0-9]', '', 'g'), ''), '6') AS INTEGER)
-        WHEN ultimo_grado ILIKE '%secundaria%' THEN 
-            COALESCE(NULLIF(regexp_replace(ultimo_grado, '[^0-9]', '', 'g'), ''), '3')::INTEGER + 6
-        WHEN ultimo_grado ILIKE '%preparatoria%' OR ultimo_grado ILIKE '%bachillerato%' THEN 
-            COALESCE(NULLIF(regexp_replace(ultimo_grado, '[^0-9]', '', 'g'), ''), '3')::INTEGER + 9
-        WHEN ultimo_grado ILIKE '%licenciatura%' OR ultimo_grado ILIKE '%universidad%' THEN 
-            COALESCE(NULLIF(regexp_replace(ultimo_grado, '[^0-9]', '', 'g'), ''), '4')::INTEGER + 12
-        WHEN ultimo_grado ILIKE '%maestría%' THEN 16
-        WHEN ultimo_grado ILIKE '%doctorado%' THEN 18
+        WHEN ultimo_grado ILIKE '%primaria%' THEN 6
+        WHEN ultimo_grado ILIKE '%secundaria%' THEN 9
+        WHEN ultimo_grado ILIKE '%preparatoria%' OR ultimo_grado ILIKE '%bachillerato%' THEN 12
+        WHEN ultimo_grado ILIKE '%licenciatura%' OR ultimo_grado ILIKE '%universidad%' THEN 16
+        WHEN ultimo_grado ILIKE '%maestría%' THEN 18
+        WHEN ultimo_grado ILIKE '%doctorado%' THEN 20
         ELSE 0
     END;
 END;
@@ -37,7 +37,8 @@ integrantes_por_hogar AS (
     FROM integrante
     GROUP BY idHogar
 ),
--- 2. Ingreso total del hogar (salarios y programas sociales)
+
+-- 2. Ingreso total del hogar (salarios + programas sociales)
 ingreso_hogar AS (
     SELECT 
         h.idHogar,
@@ -51,6 +52,7 @@ ingreso_hogar AS (
     LEFT JOIN integrantes_por_hogar iph ON h.idHogar = iph.idHogar
     GROUP BY h.idHogar, iph.num_personas
 ),
+
 -- 3. Carencias por hogar
 carencias AS (
     SELECT 
@@ -73,7 +75,7 @@ carencias AS (
         MAX(CASE WHEN s.tieneServicioMedico = false THEN 1 ELSE 0 END) AS carencia_salud,
         -- Seguridad social (solo Afore e incapacidad)
         MAX(CASE WHEN ss.tieneAfore = false AND ss.recibeIncapacidad = false THEN 1 ELSE 0 END) AS carencia_seguridad,
-        -- Calidad de vivienda (materiales y hacinamiento usando num_personas calculado)
+        -- Calidad de vivienda (materiales y hacinamiento)
         MAX(CASE 
             WHEN cv.materialPrincipal IN ('Lámina metálica', 'Lámina de cartón', 'Material de desecho', 'Palma / Bambú', 'Barro', 'Adobe')
               OR cv.materialTecho IN ('Lámina metálica', 'Lámina de cartón', 'Material de desecho', 'Palma / Paja')
@@ -109,11 +111,12 @@ carencias AS (
     LEFT JOIN alimentacion a ON h.idHogar = a.idHogar
     GROUP BY h.idHogar, iph.num_personas
 )
--- 4. Clasificación final  !!!!!!!! (falta ámbito) !!!!!!!!!!!
+
+-- 4. Clasificación final (usando ámbito desde vivienda.ambito)
 SELECT 
     h.idHogar,
     h.folio,
-    NULL AS ambito,  -- se asigna desde app ??? 
+    v.ambito,
     ROUND(ih.ingreso_total / NULLIF(ih.num_personas, 0), 2) AS ingreso_per_capita,
     c.num_personas,
     (c.rezago_educativo + c.carencia_salud + c.carencia_seguridad + 
@@ -124,10 +127,35 @@ SELECT
     c.carencia_vivienda,
     c.carencia_servicios,
     c.carencia_alimentacion,
-    'Pendiente (requiere ámbito)' AS clasificacion_pobreza
+    CASE 
+        -- Pobreza extrema
+        WHEN (ih.ingreso_total / NULLIF(ih.num_personas, 0)) < 
+             CASE WHEN v.ambito = 'rural' THEN 1854 ELSE 2467 END
+             AND (c.rezago_educativo + c.carencia_salud + c.carencia_seguridad + 
+                  c.carencia_vivienda + c.carencia_servicios + c.carencia_alimentacion) >= 3
+        THEN 'Pobreza extrema'
+        -- Pobreza moderada
+        WHEN (ih.ingreso_total / NULLIF(ih.num_personas, 0)) < 
+             CASE WHEN v.ambito = 'rural' THEN 3451 ELSE 4818 END
+             AND (c.rezago_educativo + c.carencia_salud + c.carencia_seguridad + 
+                  c.carencia_vivienda + c.carencia_servicios + c.carencia_alimentacion) >= 1
+        THEN 'Pobreza moderada'
+        -- Vulnerable por carencias
+        WHEN (ih.ingreso_total / NULLIF(ih.num_personas, 0)) >= 
+             CASE WHEN v.ambito = 'rural' THEN 3451 ELSE 4818 END
+             AND (c.rezago_educativo + c.carencia_salud + c.carencia_seguridad + 
+                  c.carencia_vivienda + c.carencia_servicios + c.carencia_alimentacion) >= 1
+        THEN 'Vulnerable por carencias'
+        -- Vulnerable por ingresos
+        WHEN (ih.ingreso_total / NULLIF(ih.num_personas, 0)) < 
+             CASE WHEN v.ambito = 'rural' THEN 3451 ELSE 4818 END
+             AND (c.rezago_educativo + c.carencia_salud + c.carencia_seguridad + 
+                  c.carencia_vivienda + c.carencia_servicios + c.carencia_alimentacion) = 0
+        THEN 'Vulnerable por ingresos'
+        -- No pobre y no vulnerable
+        ELSE 'No pobre y no vulnerable'
+    END AS clasificacion_pobreza
 FROM hogar h
+JOIN vivienda v ON h.idVivienda = v.idVivienda
 JOIN ingreso_hogar ih ON h.idHogar = ih.idHogar
 JOIN carencias c ON h.idHogar = c.idHogar;
-
-SELECT folio, num_personas, ingreso_per_capita, total_carencias 
-FROM vista_pobreza_hogar;

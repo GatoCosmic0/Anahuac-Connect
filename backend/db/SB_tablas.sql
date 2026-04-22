@@ -329,3 +329,24 @@ ALTER TABLE violencia ENABLE ROW LEVEL SECURITY;
 ALTER TABLE accesoservicios ENABLE ROW LEVEL SECURITY;
 ALTER TABLE cohesionsocial ENABLE ROW LEVEL SECURITY;
 ALTER TABLE fichatecnica ENABLE ROW LEVEL SECURITY;
+
+-- Políticas básicas
+CREATE POLICY "Acceso público de lectura" ON vivienda FOR SELECT USING (true);
+CREATE POLICY "Acceso público de lectura" ON hogar FOR SELECT USING (true);
+CREATE POLICY "Acceso público de lectura" ON integrante FOR SELECT USING (true);
+CREATE POLICY "Acceso público de lectura" ON estudios FOR SELECT USING (true);
+CREATE POLICY "Acceso público de lectura" ON ocupacion FOR SELECT USING (true);
+CREATE POLICY "Acceso público de lectura" ON salud FOR SELECT USING (true);
+CREATE POLICY "Acceso público de lectura" ON seguridadsocial FOR SELECT USING (true);
+CREATE POLICY "Acceso público de lectura" ON ingresosadicionales FOR SELECT USING (true);
+CREATE POLICY "Acceso público de lectura" ON programasocial FOR SELECT USING (true);
+CREATE POLICY "Acceso público de lectura" ON gastohogar FOR SELECT USING (true);
+CREATE POLICY "Acceso público de lectura" ON alimentacion FOR SELECT USING (true);
+CREATE POLICY "Acceso público de lectura" ON caracteristicasvivienda FOR SELECT USING (true);
+CREATE POLICY "Acceso público de lectura" ON serviciosvivienda FOR SELECT USING (true);
+CREATE POLICY "Acceso público de lectura" ON equipamientovivienda FOR SELECT USING (true);
+CREATE POLICY "Acceso público de lectura" ON facilidadvivienda FOR SELECT USING (true);
+CREATE POLICY "Acceso público de lectura" ON violencia FOR SELECT USING (true);
+CREATE POLICY "Acceso público de lectura" ON accesoservicios FOR SELECT USING (true);
+CREATE POLICY "Acceso público de lectura" ON cohesionsocial FOR SELECT USING (true);
+CREATE POLICY "Acceso público de lectura" ON fichatecnica FOR SELECT USING (true);
