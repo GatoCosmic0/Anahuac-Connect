@@ -1,3 +1,31 @@
+----------------- TABLAS DE SISTEMA  -----------------
+
+CREATE TABLE IF NOT EXISTS usuarios (
+    id_usuario INTEGER PRIMARY KEY AUTOINCREMENT,
+    email TEXT NOT NULL UNIQUE,
+    nombre TEXT,
+    apellido TEXT,
+    rol TEXT NOT NULL CHECK (rol IN ('admin', 'encuestador', 'investigador', 'sistema')),
+    activo INTEGER DEFAULT 1,  -- 1 = activo, 0 = inactivo
+    created_at TEXT DEFAULT CURRENT_TIMESTAMP  -- formato ISO: YYYY-MM-DD HH:MM:SS
+);
+
+CREATE TABLE IF NOT EXISTS encuesta (
+    id_encuesta INTEGER PRIMARY KEY AUTOINCREMENT,
+    idVivienda INTEGER NOT NULL,
+    id_encuestador INTEGER NOT NULL,
+    fechaCaptura TEXT DEFAULT CURRENT_TIMESTAMP,
+    fechaEnvio TEXT,
+    fechaModificacion TEXT DEFAULT CURRENT_TIMESTAMP,
+    estado TEXT NOT NULL CHECK (estado IN ('borrador', 'enviada', 'observada', 'validada')),
+    observaciones TEXT,
+    FOREIGN KEY (idVivienda) REFERENCES vivienda(idVivienda) ON DELETE CASCADE,
+    FOREIGN KEY (id_encuestador) REFERENCES usuarios(id_usuario) ON DELETE CASCADE,
+    UNIQUE(idVivienda)  -- una vivienda solo tiene una encuesta activa
+);
+
+----------------- TABLAS DE ENCUESTA -----------------
+
 -- TABLA 1: VIVIENDA
 
 CREATE TABLE Vivienda (

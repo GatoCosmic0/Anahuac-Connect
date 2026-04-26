@@ -6,6 +6,17 @@ ALTER TABLE vivienda ADD COLUMN ambito TEXT CHECK (ambito IN ('rural', 'urbano')
 UPDATE vivienda SET ambito = 'urbano' WHERE idVivienda IN (1, 2, 4);
 UPDATE vivienda SET ambito = 'rural' WHERE idVivienda IN (3, 5);
 
+-- Trigger para actualizar fecha de modificación en la tabla encuesta
+
+CREATE TRIGGER IF NOT EXISTS trigger_encuesta_modificacion
+    AFTER UPDATE ON encuesta
+    FOR EACH ROW
+    BEGIN
+        UPDATE encuesta SET fechaModificacion = CURRENT_TIMESTAMP
+        WHERE id_encuesta = NEW.id_encuesta;
+    END;
+
+
 -- Vista principal de pobreza
 CREATE VIEW IF NOT EXISTS vista_pobreza_hogar AS
 WITH 
@@ -157,6 +168,48 @@ JOIN vivienda v ON h.idVivienda = v.idVivienda
 JOIN ingreso_hogar ih ON h.idHogar = ih.idHogar
 JOIN carencias c ON h.idHogar = c.idHogar;
 
+-- Resumen por comunidad
+
+CREATE VIEW IF NOT EXISTS vista_resumen_comunidad AS
+SELECT 
+    v.comunidad,
+    v.ambito,
+    COUNT(DISTINCT e.id_encuesta) AS total_encuestas_validas,
+    COUNT(DISTINCT i.idIntegrante) AS total_personas,
+    ROUND(AVG(pv.ingreso_per_capita), 2) AS ingreso_promedio,
+    ROUND(AVG(pv.total_carencias), 2) AS carencias_promedio,
+    SUM(CASE WHEN pv.clasificacion_pobreza = 'Pobreza extrema' THEN 1 ELSE 0 END) AS pobreza_extrema,
+    SUM(CASE WHEN pv.clasificacion_pobreza = 'Pobreza moderada' THEN 1 ELSE 0 END) AS pobreza_moderada
+FROM encuesta e
+JOIN vivienda v ON e.idVivienda = v.idVivienda
+LEFT JOIN hogar h ON v.idVivienda = h.idVivienda
+LEFT JOIN integrante i ON h.idHogar = i.idHogar
+LEFT JOIN vista_pobreza_hogar pv ON h.idHogar = pv.idHogar
+WHERE e.estado = 'validada'
+GROUP BY v.comunidad, v.ambito;
+
+-- Vista de indicadores por municipio
+
+CREATE VIEW IF NOT EXISTS vista_indicadores_municipio AS
+SELECT 
+    v.municipio,
+    COUNT(DISTINCT e.id_encuesta) AS total_encuestas_validas,
+    AVG(pv.ingreso_per_capita) AS ingreso_promedio,
+    AVG(pv.total_carencias) AS carencias_promedio,
+    (SUM(pv.rezago_educativo) * 100.0 / COUNT(*)) AS pct_rezago_educativo,
+    (SUM(pv.carencia_salud) * 100.0 / COUNT(*)) AS pct_carencia_salud,
+    (SUM(pv.carencia_seguridad) * 100.0 / COUNT(*)) AS pct_carencia_seguridad,
+    (SUM(pv.carencia_vivienda) * 100.0 / COUNT(*)) AS pct_carencia_vivienda,
+    (SUM(pv.carencia_servicios) * 100.0 / COUNT(*)) AS pct_carencia_servicios,
+    (SUM(pv.carencia_alimentacion) * 100.0 / COUNT(*)) AS pct_carencia_alimentacion
+FROM encuesta e
+JOIN vivienda v ON e.idVivienda = v.idVivienda
+JOIN hogar h ON v.idVivienda = h.idVivienda
+JOIN vista_pobreza_hogar pv ON h.idHogar = pv.idHogar
+WHERE e.estado = 'validada'
+GROUP BY v.municipio;
+
 -- Consulta ejemplo
+
 SELECT folio, ambito, ingreso_per_capita, total_carencias, clasificacion_pobreza
 FROM vista_pobreza_hogar;
