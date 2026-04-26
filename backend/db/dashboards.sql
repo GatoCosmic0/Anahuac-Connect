@@ -3,6 +3,7 @@
 -- ============================================
 
 -- Resumen general de pobreza
+
 CREATE OR REPLACE VIEW dashboard_resumen_pobreza AS
 SELECT 
     clasificacion_pobreza,
@@ -13,6 +14,7 @@ GROUP BY clasificacion_pobreza
 ORDER BY total_hogares DESC;
 
 -- Carencias más frecuentes por comunidad
+
 CREATE OR REPLACE VIEW dashboard_carencias_por_comunidad AS
 SELECT 
     v.comunidad,
@@ -27,7 +29,8 @@ JOIN hogar h ON c.idHogar = h.idHogar
 JOIN vivienda v ON h.idVivienda = v.idVivienda
 GROUP BY v.comunidad;
 
--- 5.3 Ingreso promedio por clasificación
+-- Ingreso promedio por clasificación
+
 CREATE OR REPLACE VIEW dashboard_ingreso_por_clasificacion AS
 SELECT 
     clasificacion_pobreza,
@@ -37,3 +40,23 @@ SELECT
 FROM vista_pobreza_hogar
 GROUP BY clasificacion_pobreza
 ORDER BY ingreso_promedio;
+
+-- Resumen por comunidad
+
+CREATE OR REPLACE VIEW public.vista_resumen_comunidad AS
+SELECT 
+    v.comunidad,
+    v.ambito,
+    COUNT(DISTINCT e.idEncuesta) AS total_encuestas_validas,
+    COUNT(DISTINCT i.idIntegrante) AS total_personas,
+    ROUND(AVG(pv.ingreso_per_capita), 2) AS ingreso_promedio,
+    ROUND(AVG(pv.total_carencias), 2) AS carencias_promedio,
+    COUNT(*) FILTER (WHERE pv.clasificacion_pobreza = 'Pobreza extrema') AS pobreza_extrema,
+    COUNT(*) FILTER (WHERE pv.clasificacion_pobreza = 'Pobreza moderada') AS pobreza_moderada
+FROM public.encuesta e
+JOIN public.vivienda v ON e.idVivienda = v.idVivienda
+LEFT JOIN public.hogar h ON v.idVivienda = h.idVivienda
+LEFT JOIN public.integrante i ON h.idHogar = i.idHogar
+LEFT JOIN public.vista_pobreza_hogar pv ON h.idHogar = pv.idHogar
+WHERE e.estado = 'validada'
+GROUP BY v.comunidad, v.ambito;

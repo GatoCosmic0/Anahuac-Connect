@@ -1,3 +1,30 @@
+----------------- TABLAS DE SISTEMA  -----------------
+
+CREATE TABLE IF NOT EXISTS usuarios (
+    id UUID PRIMARY KEY REFERENCES auth.users(id) ON DELETE CASCADE,
+    email TEXT NOT NULL,
+    nombre TEXT,
+    apellido TEXT,
+    rol TEXT NOT NULL CHECK (rol IN ('admin', 'encuestador', 'investigador', 'sistema')),
+    activo BOOLEAN DEFAULT true,
+    created_at TIMESTAMPTZ DEFAULT now(),
+    updated_at TIMESTAMPTZ DEFAULT now()
+);
+
+CREATE TABLE IF NOT EXISTS encuesta (
+    idEncuesta SERIAL PRIMARY KEY,
+    idVivienda INTEGER NOT NULL REFERENCES vivienda(idVivienda) ON DELETE CASCADE,
+    idEncuestador UUID NOT NULL REFERENCES usuarios(id),
+    fechaCaptura TIMESTAMPTZ DEFAULT now(),
+    fechaEnvio TIMESTAMPTZ,
+    fechaModificacion TIMESTAMPTZ DEFAULT now(),
+    estado TEXT NOT NULL CHECK (estado IN ('borrador', 'enviada', 'observada', 'validada')),
+    observaciones TEXT,  -- para cuando se rechaza o se piden cambios
+    UNIQUE(idVivienda)   -- una vivienda solo puede tener una encuesta activa (la más reciente)
+);
+
+----------------- TABLAS DE ENCUESTA -----------------
+
 -- TABLA 1: VIVIENDA
 
 CREATE TABLE vivienda (

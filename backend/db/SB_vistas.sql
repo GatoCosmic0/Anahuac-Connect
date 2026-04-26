@@ -1,5 +1,5 @@
 -- ============================================
--- CÁLCULO DE POBREZA
+-- FUNCIONES Y VISTAS
 -- ============================================
 
 ALTER TABLE vivienda ADD COLUMN ambito TEXT CHECK (ambito IN ('rural', 'urbano'));
@@ -8,8 +8,9 @@ UPDATE vivienda SET ambito = 'rural' WHERE idVivienda IN (3, 5);
 
 
 -- ============================================
--- 1. FUNCIÓN PARA CALCULAR AÑOS DE EDUCACIÓN
+-- FUNCIÓN PARA CALCULAR AÑOS DE EDUCACIÓN
 -- ============================================
+
 CREATE OR REPLACE FUNCTION anios_educacion(ultimo_grado TEXT)
 RETURNS INTEGER AS $$
 BEGIN
@@ -27,8 +28,26 @@ END;
 $$ LANGUAGE plpgsql IMMUTABLE;
 
 -- ============================================
--- 2. VISTA DE CÁLCULO DE POBREZA
+-- FUNCIÓN PARA AXTUALIZAR FECHA DE MODIFICACIÓN EN LA TABLA ENCUESTA
 -- ============================================
+
+CREATE OR REPLACE FUNCTION public.actualizar_fecha_modificacion()
+RETURNS TRIGGER AS $$
+BEGIN
+    NEW.fechaModificacion = now();
+    RETURN NEW;
+END;
+$$ LANGUAGE plpgsql;
+
+CREATE TRIGGER trigger_encuesta_modificacion
+    BEFORE UPDATE ON public.encuesta
+    FOR EACH ROW
+    EXECUTE FUNCTION public.actualizar_fecha_modificacion();
+
+-- ============================================
+-- VISTA DE CÁLCULO DE POBREZA
+-- ============================================
+
 CREATE OR REPLACE VIEW vista_pobreza_hogar AS
 WITH 
 -- 1. Número de integrantes por hogar
