@@ -1,3 +1,7 @@
+-- ============================================
+-- USUARIOS Y ENCUESTAS
+-- ============================================
+
 INSERT INTO usuarios (email, nombre, apellido, rol) VALUES
 ('admin@diagnostico.com', 'Anahuac', 'Administradora', 'admin'),
 ('encuestador1@diagnostico.com', 'Karla', 'Trejo', 'encuestador'),
@@ -5,7 +9,7 @@ INSERT INTO usuarios (email, nombre, apellido, rol) VALUES
 ('investigador@diagnostico.com', 'Jerónimo', 'Galvez', 'investigador'),
 ('sistema@diagnostico.com', 'Sistema', 'Automático', 'sistema');
 
-INSERT INTO public.encuesta (idVivienda, idEncuestador, fechaCaptura, fechaEnvio, fechaModificacion, estado, observaciones) VALUES
+INSERT INTO encuesta (idVivienda, idEncuestador, fechaCaptura, fechaEnvio, fechaModificacion, estado, observaciones) VALUES
 (1, 2, '2026-04-01 10:30:00', '2026-04-01 11:00:00', '2026-04-02 09:00:00', 'validada', 'Encuesta completa sin observaciones'),
 (2, 2, '2026-04-02 11:45:00', '2026-04-02 12:30:00', '2026-04-02 12:30:00', 'enviada', NULL),
 (3, 3, '2026-04-03 09:15:00', '2026-04-03 10:00:00', '2026-04-04 14:20:00', 'observada', 'Revisar datos de alimentación e ingresos'),
