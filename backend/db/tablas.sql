@@ -1,6 +1,6 @@
 ----------------- TABLAS DE SISTEMA  -----------------
 
-CREATE TABLE IF NOT EXISTS usuarios (
+CREATE TABLE Usuarios (
     idUsuario INTEGER PRIMARY KEY AUTOINCREMENT,
     email TEXT NOT NULL UNIQUE,
     nombre TEXT,
@@ -10,7 +10,7 @@ CREATE TABLE IF NOT EXISTS usuarios (
     created_at TEXT DEFAULT CURRENT_TIMESTAMP  -- formato ISO: YYYY-MM-DD HH:MM:SS
 );
 
-CREATE TABLE IF NOT EXISTS encuesta (
+CREATE TABLE Encuesta (
     idEncuesta INTEGER PRIMARY KEY AUTOINCREMENT,
     idVivienda INTEGER NOT NULL,
     idEncuestador INTEGER NOT NULL,
