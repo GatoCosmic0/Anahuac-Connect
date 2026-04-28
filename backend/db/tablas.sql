@@ -1,7 +1,7 @@
 ----------------- TABLAS DE SISTEMA  -----------------
 
 CREATE TABLE IF NOT EXISTS usuarios (
-    id_usuario INTEGER PRIMARY KEY AUTOINCREMENT,
+    idUsuario INTEGER PRIMARY KEY AUTOINCREMENT,
     email TEXT NOT NULL UNIQUE,
     nombre TEXT,
     apellido TEXT,
@@ -11,19 +11,22 @@ CREATE TABLE IF NOT EXISTS usuarios (
 );
 
 CREATE TABLE IF NOT EXISTS encuesta (
-    id_encuesta INTEGER PRIMARY KEY AUTOINCREMENT,
+    idEncuesta INTEGER PRIMARY KEY AUTOINCREMENT,
     idVivienda INTEGER NOT NULL,
-    id_encuestador INTEGER NOT NULL,
+    idEncuestador INTEGER NOT NULL,
     fechaCaptura TEXT DEFAULT CURRENT_TIMESTAMP,
     fechaEnvio TEXT,
     fechaModificacion TEXT DEFAULT CURRENT_TIMESTAMP,
     estado TEXT NOT NULL CHECK (estado IN ('borrador', 'enviada', 'observada', 'validada')),
     observaciones TEXT,
-    FOREIGN KEY (idVivienda) REFERENCES vivienda(idVivienda) ON DELETE CASCADE,
-    FOREIGN KEY (id_encuestador) REFERENCES usuarios(id_usuario) ON DELETE CASCADE,
+    FOREIGN KEY (idVivienda) 
+        REFERENCES vivienda(idVivienda)
+        ON DELETE CASCADE,
+    FOREIGN KEY (idEncuestador)
+        REFERENCES usuarios(idUsuario)
+        ON DELETE CASCADE,
     UNIQUE(idVivienda)  -- una vivienda solo tiene una encuesta activa
 );
-
 ----------------- TABLAS DE ENCUESTA -----------------
 
 -- TABLA 1: VIVIENDA
@@ -41,7 +44,8 @@ CREATE TABLE Vivienda (
     viviendaHabitada INTEGER DEFAULT 1,
     usoPredio TEXT,
     tienePapelesPropiedad INTEGER,
-    situacionLegal TEXT
+    situacionLegal TEXT,
+    ambito TEXT CHECK (ambito IN ('rural', 'urbano'))
 );
 
 -- TABLA 2: HOGAR

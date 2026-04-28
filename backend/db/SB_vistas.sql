@@ -2,11 +2,6 @@
 -- FUNCIONES Y VISTAS
 -- ============================================
 
-ALTER TABLE vivienda ADD COLUMN ambito TEXT CHECK (ambito IN ('rural', 'urbano'));
-UPDATE vivienda SET ambito = 'urbano' WHERE idVivienda IN (1, 2, 4);
-UPDATE vivienda SET ambito = 'rural' WHERE idVivienda IN (3, 5);
-
-
 -- ============================================
 -- FUNCIÓN PARA CALCULAR AÑOS DE EDUCACIÓN
 -- ============================================

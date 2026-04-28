@@ -1,20 +1,23 @@
 ----------------- TABLAS DE SISTEMA  -----------------
 
 CREATE TABLE IF NOT EXISTS usuarios (
-    id UUID PRIMARY KEY REFERENCES auth.users(id) ON DELETE CASCADE,
-    email TEXT NOT NULL,
+    idUsuario SERIAL PRIMARY KEY,
+    email TEXT NOT NULL UNIQUE,
     nombre TEXT,
     apellido TEXT,
     rol TEXT NOT NULL CHECK (rol IN ('admin', 'encuestador', 'investigador', 'sistema')),
     activo BOOLEAN DEFAULT true,
-    created_at TIMESTAMPTZ DEFAULT now(),
-    updated_at TIMESTAMPTZ DEFAULT now()
+    created_at TIMESTAMPTZ DEFAULT now()
 );
 
 CREATE TABLE IF NOT EXISTS encuesta (
     idEncuesta SERIAL PRIMARY KEY,
-    idVivienda INTEGER NOT NULL REFERENCES vivienda(idVivienda) ON DELETE CASCADE,
-    idEncuestador UUID NOT NULL REFERENCES usuarios(id),
+    idVivienda INTEGER NOT NULL
+        REFERENCES vivienda(idVivienda)
+        ON DELETE CASCADE,
+    idEncuestador INTEGER NOT NULL 
+        REFERENCES usuarios(idUsuario)
+        ON DELETE CASCADE,
     fechaCaptura TIMESTAMPTZ DEFAULT now(),
     fechaEnvio TIMESTAMPTZ,
     fechaModificacion TIMESTAMPTZ DEFAULT now(),
@@ -40,7 +43,8 @@ CREATE TABLE vivienda (
     viviendaHabitada BOOLEAN DEFAULT true,
     usoPredio TEXT,
     tienePapelesPropiedad BOOLEAN,
-    situacionLegal TEXT
+    situacionLegal TEXT,
+    ambito TEXT CHECK (ambito IN ('rural', 'urbano'))
 );
 
 -- TABLA 2: HOGAR
